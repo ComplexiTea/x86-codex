@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructions - Intel Processors</title>
+    <style>
+        body { font-family: sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        h1 { color: #333; }
+        .nav { margin: 20px 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .nav a { margin-right: 20px; text-decoration: none; color: #0066cc; }
+        .nav a:hover { text-decoration: underline; }
+        .back-link { color: #0066cc; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+        .search-box { margin: 20px 0; }
+        .search-box input { padding: 10px; width: 100%; max-width: 400px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; }
+        .instructions-list { list-style: none; padding: 0; }
+        .instructions-list li { margin: 8px 0; display: flex; align-items: center; gap: 15px; }
+        .instructions-list a { color: #0066cc; text-decoration: none; min-width: 50px; }
+        .instructions-list a:hover { text-decoration: underline; }
+        .instructions-list li.hidden { display: none; }
+        .description { color: #666; font-size: 14px; }
+        .no-results { color: #999; font-style: italic; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/x86-codex/" class="back-link">← Back to home</a>
+
+    <h1>Assembly Instructions</h1>
+
+    <div class="nav">
+        <a href="/x86-codex/">Home</a>
+        <a href="/x86-codex/instructions/">Instructions</a>
+        <a href="/x86-codex/registers/">Registers</a>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search for an instruction...">
+    </div>
+
+    <p>List of all available assembly instructions:</p>
+
+    <ul class="instructions-list" id="instructionsList">
+        <!-- Instructions will be generated dynamically by JavaScript -->
+    </ul>
+
+    <div id="noResults" class="no-results" style="display: none;">No instructions found</div>
+
+    <script>
+        async function extractDescription(filename) {
+            try {
+                const response = await fetch(`/x86-codex/instructions/${filename}.md`);
+                if (!response.ok) return '';
+                const text = await response.text();
+                const firstLine = text.split('\n')[0];
+                if (firstLine.startsWith('.desc "') && firstLine.endsWith('"')) {
+                    return firstLine.substring(7, firstLine.length - 1);
+                }
+                return '';
+            } catch (error) {
+                return '';
+            }
+        }
+
+        async function renderInstructions() {
+            try {
+                const response = await fetch('/x86-codex/instructions/index.json');
+                const instructions = await response.json();
+
+                const container = document.getElementById('instructionsList');
+                container.innerHTML = '';
+
+                for (const inst of instructions) {
+                    const description = await extractDescription(inst);
+                    const name = inst.toUpperCase();
+
+                    const itemLi = document.createElement('li');
+                    itemLi.className = 'instruction-item';
+                    itemLi.setAttribute('data-name', inst);
+
+                    itemLi.innerHTML = `
+                        <a href="/x86-codex/page.html?category=instructions&file=${inst}">${name}</a>
+                        <span class="description">${description}</span>
+                    `;
+
+                    container.appendChild(itemLi);
+                }
+
+                setupSearch();
+            } catch (error) {
+                console.error('Error loading instructions:', error);
+            }
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const instructionItems = document.querySelectorAll('.instruction-item');
+            const noResults = document.getElementById('noResults');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                let visibleCount = 0;
+
+                instructionItems.forEach(item => {
+                    const name = item.getAttribute('data-name');
+                    if (name.includes(searchTerm)) {
+                        item.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            });
+        }
+
+        // Initialize on page load
+        renderInstructions();
+    </script>
+</body>
+</html>

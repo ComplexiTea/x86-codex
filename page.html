@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intel Processors</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .nav { margin: 20px 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .nav a { margin-right: 20px; text-decoration: none; color: #0066cc; font-size: 14px; }
+        .nav a:hover { text-decoration: underline; }
+        .back-link { color: #0066cc; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .content { margin: 20px 0; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        pre code { background: none; padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/" class="back-link">← Home</a>
+        <a href="/instructions/">Instructions</a>
+        <a href="/registers/">Registers</a>
+    </div>
+
+    <div class="content" id="content">
+        <p>Loading...</p>
+    </div>
+
+    <script>
+        async function loadPage() {
+            const params = new URLSearchParams(window.location.search);
+            const file = params.get('file');
+            const category = params.get('category') || 'page';
+
+            if (!file) {
+                document.getElementById('content').innerHTML = '<p>No file specified</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/${category}/${file}.md`);
+                if (!response.ok) throw new Error('File not found');
+                let text = await response.text();
+
+                // Remove .desc line from display
+                text = text.replace(/^\.desc\s+"[^"]*"\s*\n\n?/m, '');
+
+                document.getElementById('content').innerHTML = marked.parse(text);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+
+        loadPage();
+    </script>
+</body>
+</html>
